@@ -1,5 +1,9 @@
 import argparse
 import sys
+import requests
+import json
+import re
+from packaging.version import parse as parse_version
 
 
 def parse_arguments():
@@ -42,6 +46,40 @@ def validate_arguments(args):
         sys.exit(1)
 
 
+def get_package_info(package_name, version, repository_url):
+    if version == 'latest':
+        url = f"{repository_url.rstrip('/')}/json"
+    else:
+        url = f"{repository_url.rstrip('/')}/{version}/json"
+
+    url += "?callback=?"
+    print(url)
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Ошибка при получении данных о пакете: {e}")
+        sys.exit(1)
+
+
+def extract_dependencies(metadata):
+    dependencies = []
+
+    requires_dist = metadata.get('info', {}).get('requires_dist', [])
+    if requires_dist:
+        for dep in requires_dist:
+            match = re.match(r'^([a-zA-Z0-9\-_\.]+)', dep)
+            if match:
+                dependencies.append(match.group(1).lower())
+
+    requires = metadata.get('info', {}).get('requires', [])
+    if requires:
+        dependencies.extend([req.lower() for req in requires])
+
+    return list(set(dependencies))
+
+
 def main():
     args = parse_arguments()
     validate_arguments(args)
@@ -53,6 +91,17 @@ def main():
     print(f"version = {args.version}")
     print(f"ascii_tree = {args.ascii}")
     print(f"max_depth = {args.max_depth}")
+
+    if not args.test:
+        print(f"\nПолучение информации о пакете {args.package} версии {args.version}...")
+        package_data = get_package_info(args.package, args.version, args.repo)
+        dependencies = extract_dependencies(package_data)
+
+        print(f"\nПрямые зависимости пакета {args.package}:")
+        for dep in dependencies:
+            print(f"- {dep}")
+    else:
+        print("\nРежим тестирования. Прямые зависимости не извлекаются.")
 
 
 if __name__ == "__main__":
