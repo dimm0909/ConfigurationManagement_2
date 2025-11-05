@@ -7,13 +7,13 @@ def parse_arguments():
 
     parser.add_argument('--package', type=str, required=True,
                         help='Имя анализируемого пакета')
-    parser.add_argument('--repository', type=str, required=True,
+    parser.add_argument('--repo', type=str, required=True,
                         help='URL-адрес репозитория или путь к файлу тестового репозитория')
-    parser.add_argument('--test-mode', action='store_true',
+    parser.add_argument('--test', action='store_true',
                         help='Режим работы с тестовым репозиторием')
     parser.add_argument('--version', type=str, default='latest',
                         help='Версия пакета (по умолчанию: latest)')
-    parser.add_argument('--ascii-tree', action='store_true',
+    parser.add_argument('--ascii', action='store_true',
                         help='Режим вывода зависимостей в формате ASCII-дерева')
     parser.add_argument('--max-depth', type=int, default=3,
                         help='Максимальная глубина анализа зависимостей (по умолчанию: 3)')
@@ -31,7 +31,7 @@ def validate_arguments(args):
 
     if not args.package:
         errors.append("Имя пакета не может быть пустым")
-    if not args.repository:
+    if not args.repo:
         errors.append("URL репозитория не может быть пустым")
     if args.max_depth < 1:
         errors.append("Максимальная глубина должна быть положительным числом")
@@ -46,13 +46,12 @@ def main():
     args = parse_arguments()
     validate_arguments(args)
 
-    # Вывод параметров в формате ключ-значение
     print("Параметры приложения:")
     print(f"package = {args.package}")
-    print(f"repository = {args.repository}")
-    print(f"test_mode = {args.test_mode}")
+    print(f"repository = {args.repo}")
+    print(f"test_mode = {args.test}")
     print(f"version = {args.version}")
-    print(f"ascii_tree = {args.ascii_tree}")
+    print(f"ascii_tree = {args.ascii}")
     print(f"max_depth = {args.max_depth}")
 
 
