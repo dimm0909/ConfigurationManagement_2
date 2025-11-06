@@ -46,7 +46,7 @@ def validate_arguments(args):
         sys.exit(1)
 
 
-def get_package_info(package_name, version, repository_url):
+def get_package_info(version, repository_url):
     if version == 'latest':
         url = f"{repository_url.rstrip('/')}/json"
     else:
@@ -94,7 +94,7 @@ def main():
 
     if not args.test:
         print(f"\nПолучение информации о пакете {args.package} версии {args.version}...")
-        package_data = get_package_info(args.package, args.version, args.repo)
+        package_data = get_package_info(args.version, args.repo)
         dependencies = extract_dependencies(package_data)
 
         print(f"\nПрямые зависимости пакета {args.package}:")
