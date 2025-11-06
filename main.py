@@ -13,13 +13,13 @@ def parse_arguments():
                         help='Имя анализируемого пакета')
     parser.add_argument('--repo', type=str, required=True,
                         help='URL-адрес репозитория или путь к файлу тестового репозитория')
-    parser.add_argument('--test', action='store_true',
+    parser.add_argument('--test', type=str, required = True,
                         help='Режим работы с тестовым репозиторием')
-    parser.add_argument('--version', type=str, default='latest',
+    parser.add_argument('--version', type=str,
                         help='Версия пакета (по умолчанию: latest)')
-    parser.add_argument('--ascii', action='store_true',
+    parser.add_argument('--ascii', type=str, required = True,
                         help='Режим вывода зависимостей в формате ASCII-дерева')
-    parser.add_argument('--max-depth', type=int, default=3,
+    parser.add_argument('--max-depth', type=int,
                         help='Максимальная глубина анализа зависимостей (по умолчанию: 3)')
 
     try:
@@ -39,6 +39,8 @@ def validate_arguments(args):
         errors.append("URL репозитория не может быть пустым")
     if args.max_depth < 1:
         errors.append("Максимальная глубина должна быть положительным числом")
+    if not args.version:
+        errors.append("Не задана версия")
 
     if errors:
         for error in errors:
