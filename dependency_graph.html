@@ -1,0 +1,179 @@
+
+    <!DOCTYPE html>
+    <html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <title>Граф зависимостей</title>
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 20px;
+            }
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+            .mermaid {
+                text-align: center;
+                margin: 20px auto;
+                max-width: 100%;
+            }
+            pre {
+                background-color: #f5f5f5;
+                padding: 15px;
+                border-radius: 5px;
+                overflow-x: auto;
+                margin: 20px 0;
+            }
+            h1 {
+                color: #333;
+                text-align: center;
+            }
+            .notes {
+                margin: 20px 0;
+                padding: 15px;
+                background-color: #e7f3ff;
+                border-left: 4px solid #2196F3;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Граф зависимостей Python-пакетов</h1>
+            <div class="mermaid">
+                graph TD;
+    requests(("requests")):::root;
+    classDef root fill:#f96,stroke:#333,stroke-width:2px;
+    classDef dependency fill:#9cf,stroke:#333;
+    classDef cyclic fill:#f96,stroke:#333,stroke-dasharray: 5 5;
+    requests --> certifi;
+    requests --> charset_normalizer;
+    requests --> chardet;
+    requests -.-> idna:::cyclic;
+    requests --> pysocks;
+    requests --> urllib3;
+    urllib3 --> brotlicffi;
+    urllib3 --> brotli;
+    urllib3 --> h2;
+    urllib3 --> zstandard;
+    urllib3 --> pysocks;
+    pysocks["pysocks"]:::dependency;
+    zstandard --> cffi;
+    h2 --> hpack;
+    h2 --> hyperframe;
+    brotli["brotli"]:::dependency;
+    brotlicffi --> cffi;
+    idna -.-> pytest:::cyclic;
+    idna --> flake8;
+    idna --> ruff;
+    idna --> mypy;
+    mypy --> pip;
+    mypy --> tomli;
+    mypy --> typing_extensions;
+    mypy --> lxml;
+    mypy --> psutil;
+    mypy --> mypy_extensions;
+    mypy --> setuptools;
+    mypy --> pathspec;
+    mypy --> orjson;
+    ruff["ruff"]:::dependency;
+    flake8 --> mccabe;
+    flake8 --> pyflakes;
+    flake8 --> pycodestyle;
+    pytest --> pygments;
+    pytest --> tomli;
+    pytest --> iniconfig;
+    pytest --> exceptiongroup;
+    pytest --> argcomplete;
+    pytest --> attrs;
+    pytest --> hypothesis;
+    pytest --> xmlschema;
+    pytest --> colorama;
+    pytest --> pluggy;
+    pytest --> mock;
+    pytest --> packaging;
+    pytest -.-> requests:::cyclic;
+    pytest --> setuptools;
+    chardet["chardet"]:::dependency;
+    charset_normalizer["charset_normalizer"]:::dependency;
+    certifi["certifi"]:::dependency;
+
+            </div>
+            <div class="notes">
+                <h3>Примечания:</h3>
+                <ul>
+                    <li>Круглый оранжевый узел - анализируемый пакет</li>
+                    <li>Голубые узлы - зависимости</li>
+                    <li>Пунктирные линии - циклические зависимости</li>
+                </ul>
+            </div>
+            <h3>Код для Mermaid:</h3>
+            <pre>graph TD;
+    requests(("requests")):::root;
+    classDef root fill:#f96,stroke:#333,stroke-width:2px;
+    classDef dependency fill:#9cf,stroke:#333;
+    classDef cyclic fill:#f96,stroke:#333,stroke-dasharray: 5 5;
+    requests --> certifi;
+    requests --> charset_normalizer;
+    requests --> chardet;
+    requests -.-> idna:::cyclic;
+    requests --> pysocks;
+    requests --> urllib3;
+    urllib3 --> brotlicffi;
+    urllib3 --> brotli;
+    urllib3 --> h2;
+    urllib3 --> zstandard;
+    urllib3 --> pysocks;
+    pysocks["pysocks"]:::dependency;
+    zstandard --> cffi;
+    h2 --> hpack;
+    h2 --> hyperframe;
+    brotli["brotli"]:::dependency;
+    brotlicffi --> cffi;
+    idna -.-> pytest:::cyclic;
+    idna --> flake8;
+    idna --> ruff;
+    idna --> mypy;
+    mypy --> pip;
+    mypy --> tomli;
+    mypy --> typing_extensions;
+    mypy --> lxml;
+    mypy --> psutil;
+    mypy --> mypy_extensions;
+    mypy --> setuptools;
+    mypy --> pathspec;
+    mypy --> orjson;
+    ruff["ruff"]:::dependency;
+    flake8 --> mccabe;
+    flake8 --> pyflakes;
+    flake8 --> pycodestyle;
+    pytest --> pygments;
+    pytest --> tomli;
+    pytest --> iniconfig;
+    pytest --> exceptiongroup;
+    pytest --> argcomplete;
+    pytest --> attrs;
+    pytest --> hypothesis;
+    pytest --> xmlschema;
+    pytest --> colorama;
+    pytest --> pluggy;
+    pytest --> mock;
+    pytest --> packaging;
+    pytest -.-> requests:::cyclic;
+    pytest --> setuptools;
+    chardet["chardet"]:::dependency;
+    charset_normalizer["charset_normalizer"]:::dependency;
+    certifi["certifi"]:::dependency;
+</pre>
+        </div>
+        <script>
+            mermaid.initialize({
+                startOnLoad: true,
+                theme: 'default',
+                securityLevel: 'loose'
+            });
+        </script>
+    </body>
+    </html>
+    

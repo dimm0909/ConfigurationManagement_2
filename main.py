@@ -5,6 +5,8 @@ import json
 import re
 import os
 from collections import deque
+import webbrowser
+import tempfile
 
 
 def parse_arguments():
@@ -22,6 +24,8 @@ def parse_arguments():
                         help='Режим вывода зависимостей в формате ASCII-дерева (True/False)')
     parser.add_argument('--max-depth', type=int, default=3,
                         help='Максимальная глубина анализа зависимостей (по умолчанию: 3)')
+    parser.add_argument('--output', type=str, default="dependency_graph.html",
+                        help='Имя файла для сохранения визуализации графа (по умолчанию: dependency_graph.html)')
 
     try:
         args = parser.parse_args()
@@ -149,7 +153,6 @@ def build_dependency_graph(package_name, version='latest', max_depth=3, test_mod
 
 
 def get_load_order(graph, start_package):
-
     all_nodes = set()
     for node, deps in graph.items():
         all_nodes.add(node)
@@ -189,15 +192,166 @@ def get_load_order(graph, start_package):
     return load_order
 
 
-def reverse_dependencies(graph):
-    reverse_graph = {}
+def generate_mermaid_graph(graph, root_package):
+    mermaid_code = "graph TD;\n"
+
+    mermaid_code += f"    {root_package}((\"{root_package}\")):::root;\n"
+
+    mermaid_code += "    classDef root fill:#f96,stroke:#333,stroke-width:2px;\n"
+    mermaid_code += "    classDef dependency fill:#9cf,stroke:#333;\n"
+    mermaid_code += "    classDef cyclic fill:#f96,stroke:#333,stroke-dasharray: 5 5;\n"
+
+    added_edges = set()
+    cyclic_deps = detect_cycles(graph)
+
+    for package, dependencies in graph.items():
+        if not dependencies:
+            mermaid_code += f"    {package}[\"{package}\"]:::dependency;\n"
+
+        for dep in dependencies:
+            edge = f"{package}-->{dep}"
+            if edge not in added_edges:
+                # Проверка на циклическую зависимость
+                is_cyclic = (package in cyclic_deps and dep in cyclic_deps[package]) or \
+                            (dep in cyclic_deps and package in cyclic_deps[dep])
+
+                if is_cyclic:
+                    mermaid_code += f"    {package} -.-> {dep}:::cyclic;\n"
+                else:
+                    mermaid_code += f"    {package} --> {dep};\n"
+                added_edges.add(edge)
+
+    return mermaid_code
+
+
+def detect_cycles(graph):
+    cyclic_deps = {}
+
+    def dfs(package, visited, stack):
+        visited.add(package)
+        stack.add(package)
+
+        for dep in graph.get(package, []):
+            if dep not in visited:
+                if dfs(dep, visited, stack):
+                    cyclic_deps.setdefault(package, []).append(dep)
+                    return True
+            elif dep in stack:
+                cyclic_deps.setdefault(package, []).append(dep)
+                return True
+
+        stack.remove(package)
+        return False
+
+    visited = set()
+    stack = set()
 
     for package in graph:
-        reverse_graph.setdefault(package, [])
-        for dep in graph[package]:
-            reverse_graph.setdefault(dep, []).append(package)
+        if package not in visited:
+            dfs(package, visited, stack)
 
-    return reverse_graph
+    return cyclic_deps
+
+
+def print_ascii_tree(graph, root, depth=0, prefix="", visited=None):
+    if visited is None:
+        visited = set()
+
+    if root in visited:
+        print(f"{prefix}└── {root} (цикл)")
+        return
+
+    visited.add(root)
+
+    if depth == 0:
+        print(f"{root}")
+    else:
+        print(f"{prefix}└── {root}")
+
+    if root in graph and depth < 3:
+        deps = graph[root]
+        for i, dep in enumerate(deps):
+            new_prefix = prefix + ("    " if i == len(deps) - 1 else "|   ")
+            print_ascii_tree(graph, dep.lower(), depth + 1, new_prefix, visited.copy())
+
+
+def create_html_visualization(mermaid_code, output_file):
+    html_template = f"""
+    <!DOCTYPE html>
+    <html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <title>Граф зависимостей</title>
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+        <style>
+            body {{
+                font-family: Arial, sans-serif;
+                margin: 20px;
+            }}
+            .container {{
+                max-width: 1200px;
+                margin: 0 auto;
+            }}
+            .mermaid {{
+                text-align: center;
+                margin: 20px auto;
+                max-width: 100%;
+            }}
+            pre {{
+                background-color: #f5f5f5;
+                padding: 15px;
+                border-radius: 5px;
+                overflow-x: auto;
+                margin: 20px 0;
+            }}
+            h1 {{
+                color: #333;
+                text-align: center;
+            }}
+            .notes {{
+                margin: 20px 0;
+                padding: 15px;
+                background-color: #e7f3ff;
+                border-left: 4px solid #2196F3;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Граф зависимостей Python-пакетов</h1>
+            <div class="mermaid">
+                {mermaid_code}
+            </div>
+            <div class="notes">
+                <h3>Примечания:</h3>
+                <ul>
+                    <li>Круглый оранжевый узел - анализируемый пакет</li>
+                    <li>Голубые узлы - зависимости</li>
+                    <li>Пунктирные линии - циклические зависимости</li>
+                </ul>
+            </div>
+            <h3>Код для Mermaid:</h3>
+            <pre>{mermaid_code}</pre>
+        </div>
+        <script>
+            mermaid.initialize({{
+                startOnLoad: true,
+                theme: 'default',
+                securityLevel: 'loose'
+            }});
+        </script>
+    </body>
+    </html>
+    """
+
+    try:
+        with open(output_file, 'w', encoding='utf-8') as f:
+            f.write(html_template)
+        print(f"HTML файл с визуализацией успешно создан: {output_file}")
+        return True
+    except Exception as e:
+        print(f"Ошибка при создании HTML файла: {e}")
+        return False
 
 
 def main():
@@ -211,6 +365,7 @@ def main():
     print(f"version = {args.version}")
     print(f"ascii_tree = {args.ascii}")
     print(f"max_depth = {args.max_depth}")
+    print(f"output_file = {args.output}")
 
     print(f"\nПостроение графа зависимостей для пакета {args.package}...")
 
@@ -235,27 +390,36 @@ def main():
     for i, pkg in enumerate(load_order, 1):
         print(f"{i}. {pkg}")
 
+    root_package = args.package.lower()
+    mermaid_code = generate_mermaid_graph(dependency_graph, root_package)
+    print("\nКод графа в формате Mermaid:")
+    print(mermaid_code)
+
+    if create_html_visualization(mermaid_code, args.output):
+        try:
+            webbrowser.open(f'file://{os.path.abspath(args.output)}')
+        except:
+            pass
+
+    if args.ascii:
+        print("\nЗависимости в формате ASCII-дерева:")
+        print_ascii_tree(dependency_graph, root_package)
+
     if args.test:
-        print("\nДемонстрация работы с тестовым репозиторием:")
-        print("В тестовом режиме можно проверить корректность определения порядка загрузки")
-        print("для известных конфигураций графа зависимостей, включая циклические зависимости.")
-
-        test_graph = {
-            'A': ['B', 'C'],
-            'B': ['D'],
-            'C': ['D', 'E'],
-            'D': ['B'],
-            'E': ['F'],
-            'F': []
-        }
-        print("\nПример тестового графа с циклической зависимостью:")
-        for package, deps in test_graph.items():
-            print(f"{package}: {', '.join(deps)}")
-
-        test_load_order = get_load_order(test_graph, 'A')
-        print("\nПорядок загрузки для тестового графа:")
-        for i, pkg in enumerate(test_load_order, 1):
-            print(f"{i}. {pkg}")
+        print("\nДемонстрация визуализации для трех различных пакетов в тестовом режиме:")
+        test_packages = ['A', 'B', 'C']
+        for pkg in test_packages:
+            print(f"\nПакет {pkg}:")
+            test_graph = build_dependency_graph(
+                pkg,
+                'latest',
+                args.max_depth,
+                args.test,
+                args.repo
+            )
+            test_mermaid = generate_mermaid_graph(test_graph, pkg.lower())
+            print(f"Mermaid код для пакета {pkg}:")
+            print(test_mermaid)
 
 
 if __name__ == "__main__":
