@@ -103,7 +103,6 @@ def get_test_dependencies(package_name, test_file_path):
         with open(test_file_path, 'r') as f:
             test_data = json.load(f)
 
-        # Поиск пакета с учетом регистра
         package_key = package_name.upper()
         if package_key in test_data:
             return test_data[package_key]
@@ -120,7 +119,7 @@ def get_test_dependencies(package_name, test_file_path):
 def build_dependency_graph(package_name, version='latest', max_depth=3, test_mode=False, repo_url=None):
     graph = {}
     visited = set()
-    stack = [(package_name.lower(), version, 0)]  # (package_name, version, depth)
+    stack = [(package_name.lower(), version, 0)]
 
     while stack:
         current_pkg, current_ver, depth = stack.pop()
@@ -147,6 +146,58 @@ def build_dependency_graph(package_name, version='latest', max_depth=3, test_mod
                 stack.append((dep_clean, 'latest', depth + 1))
 
     return graph
+
+
+def get_load_order(graph, start_package):
+
+    all_nodes = set()
+    for node, deps in graph.items():
+        all_nodes.add(node)
+        all_nodes.update(deps)
+
+    in_degree = {node: 0 for node in all_nodes}
+
+    for node in graph:
+        for neighbor in graph[node]:
+            if neighbor in in_degree:
+                in_degree[neighbor] += 1
+
+    queue = deque([node for node, degree in in_degree.items() if degree == 0])
+    load_order = []
+
+    in_degree_copy = in_degree.copy()
+
+    while queue:
+        node = queue.popleft()
+        load_order.append(node)
+
+        if node in graph:
+            for neighbor in graph[node]:
+                if neighbor in in_degree_copy:
+                    in_degree_copy[neighbor] -= 1
+                    if in_degree_copy[neighbor] == 0:
+                        queue.append(neighbor)
+
+    if len(load_order) != len(all_nodes):
+        remaining_nodes = [node for node in all_nodes if node not in load_order]
+        load_order.extend(remaining_nodes)
+
+    if start_package in load_order:
+        load_order.remove(start_package)
+    load_order.append(start_package)
+
+    return load_order
+
+
+def reverse_dependencies(graph):
+    reverse_graph = {}
+
+    for package in graph:
+        reverse_graph.setdefault(package, [])
+        for dep in graph[package]:
+            reverse_graph.setdefault(dep, []).append(package)
+
+    return reverse_graph
 
 
 def main():
@@ -179,41 +230,32 @@ def main():
     for package, deps in dependency_graph.items():
         print(f"{package}: {', '.join(deps) if deps else 'нет зависимостей'}")
 
-    print("\nПроверка на циклические зависимости...")
-    visited = set()
-    stack = set()
-    cyclic_deps = []
-
-    def has_cycle(package):
-        if package in stack:
-            cyclic_deps.append(package)
-            return True
-        if package in visited:
-            return False
-
-        visited.add(package)
-        stack.add(package)
-
-        for dep in dependency_graph.get(package, []):
-            if has_cycle(dep):
-                return True
-
-        stack.remove(package)
-        return False
-
-    for package in dependency_graph:
-        if has_cycle(package):
-            print(f"Обнаружены циклические зависимости, включающие пакет: {package}")
-
-    if not cyclic_deps:
-        print("Циклические зависимости не обнаружены.")
+    print("\nПорядок загрузки зависимостей:")
+    load_order = get_load_order(dependency_graph, args.package.lower())
+    for i, pkg in enumerate(load_order, 1):
+        print(f"{i}. {pkg}")
 
     if args.test:
         print("\nДемонстрация работы с тестовым репозиторием:")
-        print("Тестовый режим позволяет анализировать предопределенные графы зависимостей")
-        print("где пакеты обозначены большими латинскими буквами (A, B, C и т.д.)")
-        print("Это позволяет протестировать алгоритмы обработки циклических зависимостей")
-        print("и проверить корректность работы при различных конфигурациях графа.")
+        print("В тестовом режиме можно проверить корректность определения порядка загрузки")
+        print("для известных конфигураций графа зависимостей, включая циклические зависимости.")
+
+        test_graph = {
+            'A': ['B', 'C'],
+            'B': ['D'],
+            'C': ['D', 'E'],
+            'D': ['B'],
+            'E': ['F'],
+            'F': []
+        }
+        print("\nПример тестового графа с циклической зависимостью:")
+        for package, deps in test_graph.items():
+            print(f"{package}: {', '.join(deps)}")
+
+        test_load_order = get_load_order(test_graph, 'A')
+        print("\nПорядок загрузки для тестового графа:")
+        for i, pkg in enumerate(test_load_order, 1):
+            print(f"{i}. {pkg}")
 
 
 if __name__ == "__main__":
