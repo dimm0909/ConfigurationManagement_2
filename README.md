@@ -20,24 +20,6 @@ python dependency_visualizer.py --package A --repo test_repo.json --test True
 python dependency_visualizer.py --package pandas --repo https://pypi.org --test False --version 2.0.0 --ascii True --max-depth 4 --output pandas_dependencies.mmd
 
 # Пример вывода для пакета Requests
-
-Построение графа зависимостей для пакета requests...
-Запрос информации о пакете requests версии latest из https://pypi.python.org/pypi/requests/json
-Запрос информации о пакете urllib3 версии latest из https://pypi.python.org/pypi/urllib3/json
-Запрос информации о пакете pysocks версии latest из https://pypi.python.org/pypi/pysocks/json
-Запрос информации о пакете zstandard версии latest из https://pypi.python.org/pypi/zstandard/json
-Запрос информации о пакете h2 версии latest из https://pypi.python.org/pypi/h2/json
-Запрос информации о пакете brotli версии latest из https://pypi.python.org/pypi/brotli/json
-Запрос информации о пакете brotlicffi версии latest из https://pypi.python.org/pypi/brotlicffi/json
-Запрос информации о пакете idna версии latest из https://pypi.python.org/pypi/idna/json
-Запрос информации о пакете mypy версии latest из https://pypi.python.org/pypi/mypy/json
-Запрос информации о пакете ruff версии latest из https://pypi.python.org/pypi/ruff/json
-Запрос информации о пакете flake8 версии latest из https://pypi.python.org/pypi/flake8/json
-Запрос информации о пакете pytest версии latest из https://pypi.python.org/pypi/pytest/json
-Запрос информации о пакете chardet версии latest из https://pypi.python.org/pypi/chardet/json
-Запрос информации о пакете charset_normalizer версии latest из https://pypi.python.org/pypi/charset_normalizer/json
-Запрос информации о пакете certifi версии latest из https://pypi.python.org/pypi/certifi/json
-
 Граф зависимостей:
 requests: certifi, charset_normalizer, chardet, idna, pysocks, urllib3
 urllib3: brotlicffi, brotli, h2, zstandard, pysocks
@@ -155,53 +137,3 @@ graph TD;
     chardet["chardet"]:::dependency;
     charset_normalizer["charset_normalizer"]:::dependency;
     certifi["certifi"]:::dependency;
-
-HTML файл с визуализацией успешно создан: dependency_graph.html
-
-Зависимости в формате ASCII-дерева:
-requests
-|   └── certifi
-|   └── charset_normalizer
-|   └── chardet
-|   └── idna
-|   |   └── pytest
-|   |   |   └── pygments
-|   |   |   └── tomli
-|   |   |   └── iniconfig
-|   |   |   └── exceptiongroup
-|   |   |   └── argcomplete
-|   |   |   └── attrs
-|   |   |   └── hypothesis
-|   |   |   └── xmlschema
-|   |   |   └── colorama
-|   |   |   └── pluggy
-|   |   |   └── mock
-|   |   |   └── packaging
-|   |   |   └── requests (цикл)
-|   |       └── setuptools
-|   |   └── flake8
-|   |   |   └── mccabe
-|   |   |   └── pyflakes
-|   |       └── pycodestyle
-|   |   └── ruff
-|       └── mypy
-|       |   └── pip
-|       |   └── tomli
-|       |   └── typing_extensions
-|       |   └── lxml
-|       |   └── psutil
-|       |   └── mypy_extensions
-|       |   └── setuptools
-|       |   └── pathspec
-|           └── orjson
-|   └── pysocks
-    └── urllib3
-    |   └── brotlicffi
-    |       └── cffi
-    |   └── brotli
-    |   └── h2
-    |   |   └── hpack
-    |       └── hyperframe
-    |   └── zstandard
-    |       └── cffi
-        └── pysocks
